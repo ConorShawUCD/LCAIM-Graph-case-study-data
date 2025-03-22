@@ -1,20 +1,19 @@
 # LCAIM-Graph-case-study-data
 
 This repository contains
--Neo4j community edition preloaded with relationships
--Case study integrated database
+-Neo4j case study database
 -unintegrated case study datasets
--python code for lifecycle analysis step
+-python code for lifecycle analysis + raw data
 -sample queries
+-.dump file for running the DB in neo4j desktop
 
-Steps for installing and running the Neo4j graph database locally:
 
-download and unzip 'neo4j-community-3.5.25_LCAIM.zip' 
-place in C:\ drive
+# Steps for installing and running the Neo4j graph database locally
 
-download and unzip 'active.zip'
-place in 'neo4j-community-3.5.25_LCAIM > data > database'
-
-INSTRUCTIONS FOR INSTALL AND RUN
+-Download and install Neo4j desktop, free 'community edition' from https://neo4j.com/download/ (2025.02.0)
+-unzip and import the 'active.zip' file 
+-install neo4j.dump 
 
 You can then try running some of the queries 
+
+If you encourter any issues, please don't hesitate to reach out to conor.shaw@ucdconnect.ie
