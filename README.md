@@ -20,7 +20,7 @@ This repository contains
 - Folder contains the following:
   - asset_register.xlsx = the input data for caluations for the case study, extracted from the unified graph database
   - user_input.xlsx = the analysis scope (including timeframe and some economic factors such as 'inflation rate')
-  - LCCanalysis_output.xlsx = the resulting data which is returned to the graph database
+  - LCCanalysis_output.xlsx = the resulting data which is returned to 'enrich' the graph database
 - Open the 'LCC_demonstrator_V1.5.2_20.3.25.ipynb' Python script and follow the annotated data processing steps
 
 If you encourter any issues, please don't hesitate to reach out to conor.shaw@ucdconnect.ie
