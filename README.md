@@ -1,18 +1,30 @@
 # LCAIM-Graph-case-study-data
 
 This repository contains
-- Neo4j case study database 'active.zip' 
+- Neo4j case study database 'active.zip'. This is the original DB in Neo4j Community Edition version 3.5.25
+- Neo4j case study database 'Neo.dump'. This is the DB updated to run in Neo4j Desktop version 1.6.1
 - Unintegrated case study datasets 
 - Python code for lifecycle analysis + raw data
 - Sample queries
-- .dump file for running the DB in Neo4j Desktop
 
-# Steps for installing and running the Neo4j graph database locally
+# Steps for installing and running the Neo4j graph database locally using Neo4j Desktop
 
-- Download and install Neo4j desktop, free 'community edition' from https://neo4j.com/download/ (2025.02.0)
-- Unzip and import the 'active.zip' database file 
-- Resore with neo4j.dump
-- You can then try running some of the queries 
+- Download and install Neo4j Desktop from https://neo4j.com/download/ and install by following requirements.
+- Run Neo4j Desktop 
+- Create a project. Add a File and select "neo4j.dump" to add to the Project.
+- Select "Create new DBMS from dump" to rebuild the DB. You can provide any name and password you wish.
+- Once the DB is rebuilt, you can run it by clicking "Start" and then open the Neo4j Browser by clicking "Open"
+- You can then try running some of the queries
+
+# Steps for installing and running the Neo4j graph database locally using Neo4j Community Edition Server
+
+- - Download Neo4j, free 'community edition' from https://neo4j.com/download-thanks/?edition=community&release=3.5.25&flavour=winzip (3.5.25)
+- Unzip the folder to a location of your choice. The Neo4j server will launch from that location.
+- Unzip 'active.zip'. Put the resulting database folder "graph.db" database file in YOUR_PATH/neo4j-community-3.5.25/data/databases 
+- Put "Neo4j console start.bat" in the folder YOUR_PATH/neo4j-community-3.5.25
+- Open the file using a text editor. change the line "cd YOUR_PATH/neo4j-community-3.5.25" to match your path. Save and close the file
+- You can now run Neo4j by double clicking the .bat file.
+- You can then try running some of the queries
 
 # Steps for reproducing the life cycle cost analysis
 
