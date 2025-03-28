@@ -13,7 +13,7 @@ This repository contains
 - Run Neo4j Desktop 
 - Create a project. Click the "+Add" button and add a File (3rd option in dropdown menu). Select "neo4j.dump" to add this file to the Project.
 - When Neo4j.dump is added to the project you can select it. Click on the three horizontal dots and select "Create new DBMS from dump" from the dropdown to rebuild the DB. You can provide any name and password you wish (passwords have a minimum length of 8 characters).
-- Once the DB is rebuilt, you can select it. A side window will open. Go to the second tab (Plugins) and select "APOC". Click "Install and restart" if the APOC procedures are not installed.
+- Once the DB is rebuilt, you can select it. A side window will open. Go to the second tab (Plugins) and select "APOC". Click "Install and restart" if the APOC procedures are not installed. These APOC procedures are used for certain queries, more specifically CQ-17.
 - After restarting Neo4j it will automatically open your project. You are now ready to run the database by selecting it and then clicking "Start".
 - Once the DB is started, you have various options to open it. If you wish to run the queries, select the Database and open the Neo4j Browser by clicking "Open"
 - You can also use other options like Neo4j Bloom for better visualisation of the datastructure.
