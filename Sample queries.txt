@@ -1,0 +1,230 @@
+
+
+// Portfolio node created to group assets and analysis results assigned
+MATCH path= (i:Import)-[:HAS_ASSET]-> (a:Asset)-[*]->() WHERE a.asset_id IN ["9657","9658","270620"]
+MATCH (a:Asset) -[:HAS_COST]-> (ic:InitialCost)
+MATCH (a) -[:HAS_COST]-> (rc:ReplacementCost)
+MATCH (a) -[:HAS_COST]-> (rv:ResidualValue)
+MATCH (a) -[:HAS_COST]-> (oec:OperationalEnergyCost)
+MATCH (a) -[:HAS_COST]-> (omc:OperationalMaintenanceCost)
+MATCH (a) -[:HAS_COST]-> (renc:RenovationCost)
+MATCH (a) -[:INCLUDES]-> (ae:AnalysisEvent) -[:INCLUDES]-> (ir:InflationRate) 
+MATCH (ae) -[:INCLUDES]-> (dr:DiscountRate) 
+MERGE (ae)-[:HAS_EVENTLOG]->(el:EventLog {asset_id: a.asset_id, version: "FM_LCA_test2"} )
+MERGE (p:Portfolio { version: "FM_LCA_test2"})
+MERGE (a)-[:HAS_PORTFOLIO]->(p)
+SET el.levelacosts = ic.value
+SET el.levelbcosts = (round(oec.value + omc.value))*ae.study_period + round((ae.study_period/a.lifetime)*(rc.value)) + round((ae.study_period/renc.frequency)*renc.value)
+SET el.levelccosts = (0-rv.value)
+SET el.totalcosts =  ic.value + (round(oec.value + omc.value))*ae.study_period + round((ae.study_period/a.lifetime)*(rc.value)) + round((ae.study_period/renc.frequency)*renc.value) + (0-rv.value)
+WITH  p, sum(el.totalcosts) AS SumTotalCosts
+SET p.totalcosts = SumTotalCosts
+WITH p
+MATCH path= (i:Import)-[:HAS_ASSET]-> (a:Asset)-[*]->() WHERE a.asset_id IN ["9657","9658","270620"]
+RETURN path
+
+
+// CQ1 - What is the [Lifetime] of Asset with [AssetID]?
+//
+:param asset_id => "82341808"; 
+//
+MATCH (a:Asset) WHERE a.asset_id = $asset_id 
+RETURN a.lifetime AS Lifetime
+
+
+
+// CQ2 - Which Assets [List] have a [ResidualValue] > ’0’?
+//
+:param residualvalue => 0;
+//
+MATCH (a:Asset)-[:HAS_COST]->(rv:ResidualValue)
+WHERE rv.value > $residualvalue
+RETURN a.asset_id AS AssetId, rv.value AS ResidualValue
+
+
+
+// CQ3 - How many Assets [enumerate] have [Condition] in range[1-3]?
+//
+:param mincondition => 1;
+:param maxcondition => 3;
+//
+MATCH (a:Asset)-[:HAS_CONDITION]->(con:Condition) WHERE $mincondition <= toInteger(con.condition) <= $maxcondition
+RETURN COUNT(a)
+
+
+// CQ4 - What is the average [AnnualEnergyCost] of Assets with [AssetType]?
+//
+:param asset_type=> "Lighting";
+//
+MATCH (a:Asset)-[:HAS_COST]->(oec:OperationalEnergyCost) WHERE a.asset_type = $asset_type
+RETURN a.asset_type AS AssetType, (round(100*AVG(oec.value)))/100 AS AverageOperationalEnergyCost
+
+
+
+// CQ5 - SUM the Stage A, B and C costs for Asset [list]?
+//
+:param asset_id=> ['9658', '82344529'];
+//
+//
+MATCH (i:Import)-[:HAS_ASSET]->(a:Asset) WHERE a.asset_id IN $asset_id
+MATCH (a) -[:HAS_COST]-> (ic:InitialCost)
+MATCH (a) -[:HAS_COST]-> (rc:ReplacementCost)
+MATCH (a) -[:HAS_COST]-> (rv:ResidualValue)
+MATCH (a) -[:HAS_COST]-> (oec:OperationalEnergyCost)
+MATCH (a) -[:HAS_COST]-> (omc:OperationalMaintenanceCost)
+MATCH (a) -[:HAS_COST]-> (renc:RenovationCost)
+MATCH (i) -[:HAS_BASE_EVENT]->(bae) -[:INCLUDES]-> (ae:AnalysisEvent) 
+MATCH (ae) -[:INCLUDES]-> (dr:DiscountRate) 
+SET a.levelacost = ic.value
+SET a.levelbcost = (round(oec.value + omc.value))*ae.study_period + round((ae.study_period/a.lifetime)*(rc.value)) + round((ae.study_period/renc.frequency)*renc.value)
+SET a.levelccost = (0-rv.value)
+RETURN DISTINCT 
+a.asset_id AS asset_id, 
+ic.value AS LevelA_Cost,
+(round(oec.value + omc.value)) AS LevelB_AnnualCost,
+(round(oec.value + omc.value))*ae.study_period AS LevelB_TotalAnnualCost,
+round((ae.study_period/a.lifetime)*(rc.value)) AS LevelB_ReplacementCost,
+round((ae.study_period/renc.frequency)*renc.value) AS LevelB_RenovationCost,
+(round(oec.value + omc.value))*ae.study_period + round((ae.study_period/a.lifetime)*(rc.value)) + round((ae.study_period/renc.frequency)*renc.value) AS LevelB_Cost, 
+(0-rv.value) as LevelC_Cost,
+ic.value + (round(oec.value + omc.value))*ae.study_period + round((ae.study_period/a.lifetime)*(rc.value)) + round((ae.study_period/renc.frequency)*renc.value) + (0-rv.value) AS LCA_Cost
+
+
+// CQ6 - Retrieve the inputs for conducting LifeCycleCost analysis for asset [List]?
+//
+:param asset_id=> ['9658', '9657', '270620'];
+//
+MATCH (i:Import)-[:HAS_ASSET]->(a:Asset) WHERE a.asset_id IN $asset_id OPTIONAL MATCH (a)-[:HAS_COST]->(ic:InitialCost) OPTIONAL MATCH (a)-[:HAS_COST]->(rc:ReplacementCost) OPTIONAL MATCH (a)-[:HAS_COST]->(rv:ResidualValue) OPTIONAL MATCH (a)-[:HAS_COST]->(oec:OperationalEnergyCost) OPTIONAL MATCH (a)-[:HAS_COST]->(omc:OperationalMaintenanceCost) OPTIONAL MATCH (a)-[:HAS_COST]->(renc:RenovationCost) RETURN DISTINCT a.asset_id AS AssetId, a.installation_date AS InstallationDate, a.lifetime AS LifeTime, ic.value AS InitialCost, rc.value AS ReplacementCost, rv.value AS ResidualValue, oec.value AS AnnualEnergy, omc.value AS AnnualMaintenance, renc.value AS RenovationCost, renc.frequency AS RenovationFrequency
+
+
+// CQ6a - Retrieve the inputs for conducting LifeCycleCost analysis for asset [List] and return as a graph
+//
+:param asset_id=> ['9658', '9657', '270620'];
+//
+MATCH (i:Import)-[:HAS_ASSET]->(a:Asset) 
+WHERE a.asset_id IN $asset_id 
+OPTIONAL MATCH (a)-[:HAS_COST]->(ic:InitialCost) 
+OPTIONAL MATCH (a)-[:HAS_COST]->(rc:ReplacementCost) 
+OPTIONAL MATCH (a)-[:HAS_COST]->(rv:ResidualValue) 
+OPTIONAL MATCH (a)-[:HAS_COST]->(oec:OperationalEnergyCost)
+OPTIONAL MATCH (a)-[:HAS_COST]->(omc:OperationalMaintenanceCost) 
+OPTIONAL MATCH (a)-[:HAS_COST]->(renc:RenovationCost) 
+RETURN i, a, ic, rc, rv, oec, omc, renc
+
+
+//CQ7: What is the LCC and StudyPeriod for the AnalysisEvent [Portfolio1]?
+//
+:param asset_id=> ['9658', '82344529', '70134'];
+//
+MATCH (i:Import)-[]-> (a:Asset) WHERE a.asset_id IN $asset_id
+MATCH (i)-[]->(bae:BaseAnalysisEvent)-[]->(ae:AnalysisEvent)-[]->(ir:InflationRate)
+MATCH (ae)-[]->(dr:DiscountRate)
+MERGE (p:Portfolio {asset_id: $asset_id, version: "FM_LCA_test2"})
+MERGE (p)-[:CONTAINS]->(a)
+MERGE (p)-[:INCLUDES]->(ae2:AnalysisEvent {asset_id: $asset_id, analysis_event_id: ae.analysis_event_id, study_period: ae.study_period, version: "FM_LCA_test2"})-[:INCLUDES]->(ir2:InflationRate {inflation_rate: ir.inflation_rate, asset_id: $asset_id, version: "FM_LCA_test2"})
+MERGE (ae2)-[:INCLUDES]->(dr2:DiscountRate {discount_rate: dr.discount_rate, asset_id: $asset_id, version: "FM_LCA_test2"})
+WITH p
+MATCH (p)-[:CONTAINS]->(a:Asset)-[:INCLUDES]->(ae:AnalysisEvent)
+WITH DISTINCT a AS Assets, p, ae
+RETURN Assets.asset_id, SUM(ae.life_cycle_cost) AS LCC, ae.study_period AS StudyPeriod
+
+
+//CQ8a: What is the LifeCycleCost of Assets [list] PER ASSET?
+/
+:param asset_id=> ['9658', '82344529'];
+//
+MATCH (a:Asset)-[]->(ae:AnalysisEvent {analysis_event_id: 1}) WHERE a.asset_id IN $asset_id
+RETURN a.asset_id AS AssetId, ae.study_period AS StudyPeriod, ae.life_cycle_cost AS LifeCycleCost
+
+
+//CQ8b: What is the LifeCycleCost of Assets [list] IN TOTAL?
+//
+:param asset_id=> ['9658', '82344529'];
+//
+MATCH (a:Asset)-[]->(ae:AnalysisEvent {analysis_event_id: 1}) WHERE a.asset_id IN $asset_id
+RETURN ae.study_period AS StudyPeriod, SUM(toFloat(ae.life_cycle_cost)) AS LifeCycleCost
+
+
+//CQ9: What is the [LifeCycleCost] for SUM[Assets IN AssetResister]?
+//
+MATCH (i:Import)-[]-> (a:Asset)-[]->(ae:AnalysisEvent {analysis_event_id: 1}) 
+RETURN ae.study_period AS StudyPeriod, (round(100*(SUM(toFloat(ae.life_cycle_cost)))))/100 AS LifeCycleCost
+
+
+//CQ10a: Which Asset from [list] has the lowest LifeCycleCost over StudyPeriod?
+//
+MATCH (i:Import)-[]-> (a:Asset)-[]->(ae:AnalysisEvent {analysis_event_id: 1})
+WITH min(toFloat(ae.life_cycle_cost)) AS MinLCC
+MATCH (ae:AnalysisEvent)<-[]-(a:Asset) WHERE toFloat(ae.life_cycle_cost) = MinLCC
+RETURN a.asset_id AS AssetId, a.asset_type AS AssetType, ae.life_cycle_cost AS MinLCC
+
+
+//CQ10b: Which Asset from [list] has the highest LifeCycleCost over StudyPeriod?
+//
+MATCH (i:Import)-[]-> (a:Asset)-[]->(ae:AnalysisEvent {analysis_event_id: 1})
+WITH max(toFloat(ae.life_cycle_cost)) AS MaxLCC
+MATCH (ae:AnalysisEvent)<-[]-(a:Asset) WHERE toFloat(ae.life_cycle_cost) = MaxLCC
+RETURN a.asset_id AS Asset, a.asset_type AS AssetType, ae.life_cycle_cost AS MaxLCC
+
+
+
+//CQ11: What is the percentage breakdown between Life Cycle Phases (A,B,C) for Asset [AssetID]?
+//
+:param asset_id=> ['9658', '82344529'];
+//
+MATCH (a:Asset) WHERE a.asset_id IN $asset_id
+MATCH (a) -[:HAS_COST]-> (ic:InitialCost)
+MATCH (a) -[:HAS_COST]-> (rc:ReplacementCost)
+MATCH (a) -[:HAS_COST]-> (rv:ResidualValue)
+MATCH (a) -[:HAS_COST]-> (oec:OperationalEnergyCost)
+MATCH (a) -[:HAS_COST]-> (omc:OperationalMaintenanceCost)
+MATCH (a) -[:HAS_COST]-> (renc:RenovationCost)
+MATCH (a) -[:INCLUDES]-> (ae:AnalysisEvent) -[:INCLUDES]-> (ir:InflationRate) 
+MATCH (ae) -[:INCLUDES]-> (dr:DiscountRate) 
+WITH a, ic, rc, rv, oec, omc, renc, ae, ir, dr
+WITH a, ae, rc, renc, ic.value AS Level1Costs, (round(oec.value + omc.value)) AS Level2AnnualCosts, (0-rv.value) as Level3Costs
+WITH a, Level1Costs, Level2AnnualCosts*ae.study_period AS Level2TotalAnnualCosts, round((ae.study_period/a.lifetime)*(rc.value)) AS Level2ReplacementCosts, round((ae.study_period/renc.frequency)*renc.value) AS Level2RenovationCosts, Level3Costs
+WITH a, Level1Costs, Level2TotalAnnualCosts + Level2ReplacementCosts + Level2RenovationCosts AS Level2Costs, Level3Costs
+RETURN a.asset_id AS AssetId, (Level1Costs / (Level1Costs + Level2Costs + Level3Costs))*100 AS PercLevel1Costs,  (Level2Costs / (Level1Costs + Level2Costs + Level3Costs))*100 AS PercLevel2Costs,  (Level3Costs / (Level1Costs + Level2Costs + Level3Costs))*100 AS PercLevel3Costs
+
+
+//CQ-17 Which LifeCycleCost inputs have value ’Null’ ?
+//
+OPTIONAL MATCH path= (a:Asset)-[:HAS_COST]->(b) WHERE b.value = ""
+OPTIONAL MATCH path2= (a2:Asset)-[:HAS_COST]->(c) WHERE c.value IS NULL    
+OPTIONAL MATCH path3 = (b)
+OPTIONAL MATCH path4 = (c)
+WITH collect(nodes(path3)) + collect(nodes(path4)) AS missingnodes UNWIND missingnodes as missingnodelist UNWIND missingnodelist as missingdata
+RETURN missingdata.asset_id AS AssetId, toString(apoc.text.join(LABELS(missingdata),'')) AS MissingData
+
+
+//CQ-18 Do these LifeCycleCost inputs = the reported LifeCycleCost over Scope [AssetList, StudyPeriod, Economic factors]?
+//
+MATCH (i:Import)-[]-> (a:Asset) WHERE a.asset_id IN $asset_id
+MATCH (i)-[]->(bae:BaseAnalysisEvent)-[]->(ae:AnalysisEvent)-[]->(ir:InflationRate)
+MATCH (ae)-[]->(dr:DiscountRate)
+MERGE (p:Portfolio {asset_id: $asset_id, version: "FM_LCA_test2"})
+MERGE (p)-[:CONTAINS]->(a)
+MERGE (p)-[:INCLUDES]->(ae2:AnalysisEvent {asset_id: $asset_id, analysis_event_id: ae.analysis_event_id, study_period: ae.study_period, version: "FM_LCA_test2"})-[:INCLUDES]->(ir2:InflationRate {inflation_rate: ir.inflation_rate, asset_id: $asset_id, version: "FM_LCA_test2"})
+MERGE (ae2)-[:INCLUDES]->(dr2:DiscountRate {discount_rate: dr.discount_rate, asset_id: $asset_id, version: "FM_LCA_test2"})
+WITH p
+MATCH (p)-[:CONTAINS]->(a:Asset)-[:INCLUDES]->(ae:AnalysisEvent)
+WITH DISTINCT a, p, ae
+RETURN SUM(ae.life_cycle_cost) AS LifeCycleCost, SUM(a.levelacost + a.levelbcost + a.levelccost) AS LevelsCost, CASE round(SUM(ae.life_cycle_cost)) = SUM(a.levelacost + a.levelbcost + a.levelccost) WHEN true THEN 'Yes' ELSE 'No' END AS LCCEqualsLevels, (SUM(a.levelacost + a.levelbcost + a.levelccost) / SUM(ae.life_cycle_cost)) * 100 AS PercDiv
+
+
+//CQ-19 Which Level(s) Indicators [List] have value ’Null’ ?
+//
+OPTIONAL MATCH path= (a:Asset) WHERE a.levelacost = ""
+OPTIONAL MATCH path2= (a2:Asset) WHERE a2.levelacost IS NULL
+WITH collect(nodes(path)) + collect(nodes(path2)) AS missinglevela
+OPTIONAL MATCH path3= (a3:Asset) WHERE a3.levelbcost = ""
+OPTIONAL MATCH path4= (a4:Asset) WHERE a4.levelbcost IS NULL
+WITH missinglevela, collect(nodes(path3)) + collect(nodes(path4)) AS
+missinglevelb
+OPTIONAL MATCH path5= (a5:Asset) WHERE a5.levelccost = ""
+OPTIONAL MATCH path6= (a6:Asset) WHERE a6.levelccost IS NULL
+WITH missinglevela, missinglevelb, collect(nodes(path5)) + collect(nodes(path6
+)) AS missinglevelc
+RETURN DISTINCT missinglevela, missinglevelb, missinglevelc
+
