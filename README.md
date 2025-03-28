@@ -11,10 +11,12 @@ This repository contains
 
 - Download and install Neo4j Desktop from https://neo4j.com/download/ and install by following requirements.
 - Run Neo4j Desktop 
-- Create a project. Add a File and select "neo4j.dump" to add to the Project.
-- Select "Create new DBMS from dump" to rebuild the DB. You can provide any name and password you wish.
-- Once the DB is rebuilt, you can run it by clicking "Start" and then open the Neo4j Browser by clicking "Open"
-- You can then try running some of the queries
+- Create a project. Click the "+Add" button and add a File (3rd option in dropdown menu). Select "neo4j.dump" to add this file to the Project.
+- When Neo4j.dump is added to the project you can select it. Click on the three horizontal dots and select "Create new DBMS from dump" from the dropdown to rebuild the DB. You can provide any name and password you wish (passwords have a minimum length of 8 characters).
+- Once the DB is rebuilt, you can select it. A side window will open. Go to the second tab (Plugins) and select "APOC". Click "Install and restart" if the APOC procedures are not installed.
+- After restarting Neo4j it will automatically open your project. You are now ready to run the database by selecting it and then clicking "Start".
+- Once the DB is started, you have various options to open it. If you wish to run the queries, select the Database and open the Neo4j Browser by clicking "Open"
+- You can also use other options like Neo4j Bloom for better visualisation of the datastructure.
 
 # Steps for installing and running the Neo4j graph database locally using Neo4j Community Edition Server
 
